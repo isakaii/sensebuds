@@ -1,0 +1,113 @@
+# Run on Google Colab
+!pip install -q sklearn
+%tensorflow_version 2.x
+
+# NumPy is a Python library that provides the n-dimensional array structure for Python's data science toolkit. 
+import numpy as np
+# Pandas software library: DataFrame is a 2-D data structure (rows and columns) built on the Numpy package
+import pandas as pd
+
+# TensorFlow is a software library for numerical computation using data flow graphs (used for ML)
+import tensorflow as tf
+
+# Import Python datetime module
+import time 
+import datetime 
+
+# Import feature_column module in TensorFlow
+from tensorflow import feature_column
+# Import tf.keras.layers module 
+from tensorflow.keras import layers
+# Split arrays/matrices into random train and test substets
+from sklearn.model_selection import train_test_split
+
+# Layers with nodes. Nodes connect directly to an input variable and contributes to an output variable
+# Parameters to adjust to tune the model's performance
+layer_nodes = [70, 60, 50,]
+# Define input training dataset
+input_df = pd.read_csv("/content/20210220_training - sense1_20210220_095722_waittoturnoff (4).csv")
+
+# Drop timestamp for training since it does not affect trigger yes/no needed to train the model
+# Pick up timestamp later to graph results
+input_df = input_df.drop(columns=["timestamp"])
+# Save output into input_label
+input_label = input_df.pop("output")
+
+# For each column name (temperature, humidity, noise, heartrate), convert it into a numeric value (float) and put it in the feature_columns array
+feature_columns = []
+for feature_name in input_df.columns:
+  feature_columns.append(tf.feature_column.numeric_column(feature_name, dtype=tf.float32))
+
+# Train model 
+def _train_input_fn(features, labels, training=True, batch_size=256):
+  # Convert the inputs to a Dataset.
+  dataset = tf.data.Dataset.from_tensor_slices((dict(features), labels))
+
+  # Shuffle and repeat if you are in training mode.
+  if training:
+      dataset = dataset.shuffle(1000).repeat()
+  
+  return dataset.batch(batch_size)
+
+# Build a Deep Neural Network (DNN) with 3 hidden layers with 30, 20 and 10 hidden nodes each.
+classifier = tf.estimator.DNNClassifier(
+    feature_columns=feature_columns,
+    hidden_units=layer_nodes,
+    # The model must choose between 2 classes. In this case, 0=no music, 1=music
+    n_classes=2)
+
+# Use the defined _train_input_fn to train the model
+classifier.train(
+    input_fn=lambda: _train_input_fn(input_df, input_label, training=True),
+    steps=5000)
+
+def predict_input_fn(features, batch_size=256):
+    """An input function for prediction."""
+    # Convert the inputs to a Dataset without labels.
+    return tf.data.Dataset.from_tensor_slices(dict(features)).batch(batch_size)
+
+# Read in the test dataset 
+# Save the timestamp separately
+test_df = pd.read_csv("/content/20210220_training - sense1_20210220_095722_waittoturnoff (4).csv")
+test_timestamp = test_df.pop("timestamp")
+
+# Use the defined predict_input_fn to test the model (prediction)
+predictions = classifier.predict(
+    input_fn=lambda: predict_input_fn(test_df))
+
+# Convert String timestamp into datetime objects
+times = []
+for timestamp in test_timestamp:
+  element = datetime.datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
+  times.append(element)
+
+# Read prediction results: class(0,1) and the corresponding probabilities (confidence)
+output = []
+for pred_dict in predictions:
+    class_id = pred_dict['class_ids'][0]
+    probability = pred_dict['probabilities'][class_id]
+    result = 0
+    if class_id == 1 and probability >= 0.6:
+      result = 1
+    # For graphing purposes, multiply by 100
+    output.append(result * 100)
+
+output_df = test_df
+output_df["timestamp"] = times
+output_df["output"] = output
+
+# Importing plotting libraries
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+fig=plt.figure(figsize=(30, 10), dpi= 200, facecolor='w', edgecolor='k')
+sns.set_style("dark")
+
+print(output)
+
+# Graph output to see when it is triggered based on sensor input
+# (x="timestamp", y="temperature", data=output_df, label="temperature", color="blue")
+sns.lineplot(x="timestamp", y="humidity", data=output_df, label="humidity", color="darkblue")
+# sns.lineplot(x="timestamp", y="noise", data=output_df, label="noise", color="yellow")
+sns.lineplot(x="timestamp", y="heartrate", data=output_df, label="heartrate", color="green")
+sns.lineplot(x="timestamp", y="output", data=output_df, label="output", color="red")
