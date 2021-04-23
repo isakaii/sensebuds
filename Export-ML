@@ -1,0 +1,5 @@
+# Run on Google Colab
+serving_input_fn = tf.estimator.export.build_parsing_serving_input_receiver_fn(
+  tf.feature_column.make_parse_example_spec(feature_columns))
+
+classifier.export_saved_model(export_dir_base="/content/model export", serving_input_receiver_fn=serving_input_fn)
