@@ -1,0 +1,62 @@
+# Run on Google Colab
+# This algorithm takes in 4 sensor inputs and calculates a weighted sum 
+# "AND" relationship between the sensor inputs is used since it is a summation
+# Thresholds were determined based on literature review and real world testing
+# [temperature, humidity, noise, heartrate]
+weights = [0.5, 2.0, 1.0, 1.0]
+
+thresold = 2.6
+
+# Function is a weighted sum, if weighted sum is greater than or equal to defined threshold, return 1
+def is_weighted_sum_triggered(row):
+  # weighted_sum = row["temperature"] * weights[0] + row["humidity"] * weights[1] + row["noise"] * weights[2] + row["heartrate"] * weights[3]
+  weighted_sum = row["humidity"] / max_humidity * weights[1]  + row["heartrate"] / max_heartrate * weights[3]
+  # print(weighted_sum)
+  if weighted_sum >= thresold:
+    return 1
+  
+  return 0
+
+test_df = pd.read_csv("/content/20210220_training - sense1_20210220_095722_waittoturnoff (4).csv")
+test_timestamp = test_df.pop("timestamp")
+
+max_humidity = test_df["humidity"].max()
+max_heartrate = test_df["heartrate"].max()
+
+# Smoothing
+smoothed_df = pd.DataFrame()
+smoothed_df["humidity"] = smoothing(test_df["humidity"])
+smoothed_df["heartrate"] = smoothing(test_df["heartrate"])
+
+times = []
+for timestamp in test_timestamp:
+  element = datetime.datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
+  times.append(element)
+
+test_df["timestamp"] = times
+smoothed_df["timestamp"] = times[0: smoothed_df["humidity"].size]
+output_col = []
+for index, row in smoothed_df.iterrows():
+  output_col.append(is_weighted_sum_triggered(row) * 100)
+
+smoothed_df["output"] = output_col
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+fig=plt.figure(figsize=(30, 10), dpi= 200, facecolor='w', edgecolor='k')
+sns.set_style("dark")
+
+pd.set_option('display.max_rows', smoothed_df.shape[0]+1)
+print(smoothed_df["output"])
+
+# sns.lineplot(x="timestamp", y="temperature", data=test_df, label="temperature", color="blue")
+sns.lineplot(x="timestamp", y="humidity", data=test_df, label="humidity", color="lightblue")
+# sns.lineplot(x="timestamp", y="noise", data=test_df, label="noise", color="yellow")
+sns.lineplot(x="timestamp", y="heartrate", data=test_df, label="heartrate", color="lightgreen")
+
+# sns.lineplot(x="timestamp", y="temperature", data=test_df, label="temperature", color="blue")
+sns.lineplot(x="timestamp", y="humidity", data=smoothed_df, label="smoothed humidity", color="darkblue")
+# sns.lineplot(x="timestamp", y="noise", data=test_df, label="noise", color="yellow")
+sns.lineplot(x="timestamp", y="heartrate", data=smoothed_df, label="smoothed heartrate", color="darkgreen")
+sns.lineplot(x="timestamp", y="output", data=smoothed_df, label="output", color="red")
