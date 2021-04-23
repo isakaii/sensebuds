@@ -1,0 +1,15 @@
+# Run on Google Colab
+smoothing_window_size = 10
+
+def smoothing(df):
+  result = []
+  sum = 0
+  for index in range(df.size):
+    sum += df[index]
+    if index < smoothing_window_size - 1:
+      continue
+   
+    result.append(sum / smoothing_window_size)
+    sum -= df[index - smoothing_window_size + 1]
+  
+  return result
