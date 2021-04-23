@@ -1,4 +1,3 @@
-# SenseBuds
 # Multi-modal wireless sensor network (WSN) enabled smart earbuds for individuals with autism spectrum disorder (ASD)
 A multi-modal wireless sensor network (WSN) automatically controlled music therapeutic device was
 engineered to alleviate discomfort, agitation, and pain from sensory overload from overstimulation of
