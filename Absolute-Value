@@ -1,0 +1,64 @@
+# Run on Google Colab
+# This algorithm takes in 4 sensor inputs and uses an "OR" relationship to decide triggering
+# Thresholds were determined based on literature review and real world testing
+# Take in temperature, humidity, noise, and heartrate thresholds
+temp_thresold = 30
+humidity_thresold = 60
+noise_thresold = 80
+heartrate_thresold = 90
+
+# Function to decide return value: 0=no music, 1=music
+# If any one of the thresholds are exceeded, the output is "1"
+def is_triggered(row):
+  # if row["temperature"] >= temp_thresold:
+  #   return 1
+
+  if row["humidity"] >= humidity_thresold:
+    return 1
+
+  # if row["noise"] >= noise_thresold:
+  #   return 1
+
+  if row["heartrate"] >= heartrate_thresold:
+    return 1
+  # If no thresholds are exceeded, return 0
+  return 0
+
+# Read test dataset
+test_df = pd.read_csv("/content/20210220_training - sense1_20210220_095722_waittoturnoff (4).csv")
+# Save timestamp separately
+test_timestamp = test_df.pop("timestamp")
+
+# Smoothing
+smoothed_df = pd.DataFrame()
+smoothed_df["humidity"] = smoothing(test_df["humidity"])
+smoothed_df["heartrate"] = smoothing(test_df["heartrate"])
+
+# Convert String timestamp into datetime objects
+times = []
+for timestamp in test_timestamp:
+  element = datetime.datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
+  times.append(element)
+
+smoothed_df["timestamp"] = times[0: smoothed_df["humidity"].size]
+
+output_col = []
+for index, row in smoothed_df.iterrows():
+  output_col.append(is_triggered(row) * 100)
+
+smoothed_df["output"] = output_col
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+fig=plt.figure(figsize=(30, 10), dpi= 200, facecolor='w', edgecolor='k')
+sns.set_style("dark")
+
+pd.set_option('display.max_rows', smoothed_df.shape[0]+1)
+print(smoothed_df["output"])
+
+# sns.lineplot(x="timestamp", y="temperature", data=test_df, label="temperature", color="blue")
+sns.lineplot(x="timestamp", y="humidity", data=smoothed_df, label="humidity", color="darkblue")
+# sns.lineplot(x="timestamp", y="noise", data=test_df, label="noise", color="yellow")
+sns.lineplot(x="timestamp", y="heartrate", data=smoothed_df, label="heartrate", color="green")
+sns.lineplot(x="timestamp", y="output", data=smoothed_df, label="output", color="red")
