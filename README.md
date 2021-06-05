@@ -1,6 +1,8 @@
 # Multi-modal Wireless Sensor Network (WSN) Enabled Smart Earbuds for Individuals on the Autism Spectrum
 Project designed, developed, and tested by Isabella He. 
+
 **Awards won:**
+
 Science/Technology Component:
 3rd Place UCLA Brain Institute Award at California Science and Engineering Fair for best neuroscience project in the Senior Division
 1st Place Cisco AI and Engineering Award
