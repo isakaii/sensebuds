@@ -1,5 +1,5 @@
 # Multi-modal Wireless Sensor Network (WSN) Enabled Smart Earbuds for Individuals on the Autism Spectrum
-Patent Pending (https://tinyurl.com/sense-patent); Project designed, developed, and tested by Isabella He. 
+Patent Pending; Project designed, developed, and tested by Isabella He. 
 
 **Awards won:**
 
